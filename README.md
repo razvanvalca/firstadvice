@@ -88,21 +88,21 @@ Open http://localhost:8080 in your browser.
 
 ## Components
 
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| STT | ElevenLabs Scribe Realtime | WebSocket streaming transcription |
-| LLM | Claude Haiku 4.5 | Fast responses with prompt caching |
-| TTS | ElevenLabs Flash v2.5 | Low-latency German speech synthesis |
-| RAG | scikit-learn TF-IDF | Product knowledge retrieval |
-| VAD | Browser-side | Instant voice activity detection |
+| Component | Technology                 | Purpose                             |
+| --------- | -------------------------- | ----------------------------------- |
+| STT       | ElevenLabs Scribe Realtime | WebSocket streaming transcription   |
+| LLM       | Claude Haiku 4.5           | Fast responses with prompt caching  |
+| TTS       | ElevenLabs Flash v2.5      | Low-latency German speech synthesis |
+| RAG       | scikit-learn TF-IDF        | Product knowledge retrieval         |
+| VAD       | Browser-side               | Instant voice activity detection    |
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ELEVENLABS_API_KEY` | Yes | ElevenLabs API key |
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |
-| `ELEVENLABS_VOICE_ID` | No | Custom German voice ID |
+| Variable              | Required | Description                  |
+| --------------------- | -------- | ---------------------------- |
+| `ELEVENLABS_API_KEY`  | Yes      | ElevenLabs API key           |
+| `ANTHROPIC_API_KEY`   | Yes      | Anthropic API key for Claude |
+| `ELEVENLABS_VOICE_ID` | No       | Custom German voice ID       |
 
 ## Links
 
