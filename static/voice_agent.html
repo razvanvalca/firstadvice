@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Voice Agent</title>
+    <title>Swiss Life Insurance Advisor</title>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
       * {
         margin: 0;
         padding: 0;
@@ -12,14 +14,15 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system,
           sans-serif;
-        background: linear-gradient(
-          135deg,
-          #0f0f23 0%,
-          #1a1a3e 50%,
-          #0d1f3c 100%
-        );
+        background: radial-gradient(
+            circle at 20% 20%,
+            #12395f 0,
+            transparent 35%
+          ),
+          radial-gradient(circle at 80% 0%, #1b6e7c 0, transparent 30%),
+          linear-gradient(135deg, #050712 0%, #0c1224 45%, #061020 100%);
         min-height: 100vh;
         display: flex;
         flex-direction: column;
@@ -31,39 +34,40 @@
 
       .container {
         text-align: center;
-        max-width: 700px;
+        max-width: 900px;
         width: 100%;
       }
 
       h1 {
         font-size: 2.5rem;
         margin-bottom: 8px;
-        background: linear-gradient(90deg, #00d4ff, #a855f7);
+        background: linear-gradient(110deg, #22d3ee, #c084fc);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
       }
 
       .subtitle {
-        color: #6b7280;
-        margin-bottom: 30px;
-        font-size: 1rem;
+        color: #9ca3af;
+        margin-bottom: 26px;
+        font-size: 1.05rem;
       }
 
       .agent-container {
         background: rgba(255, 255, 255, 0.03);
         border-radius: 24px;
-        padding: 40px;
+        padding: 32px;
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
       }
 
       /* Orb animation container */
       .orb-container {
         position: relative;
-        width: 220px;
-        height: 220px;
-        margin: 0 auto 30px;
+        width: 240px;
+        height: 240px;
+        margin: 0 auto 26px;
       }
 
       .orb {
@@ -71,8 +75,8 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 160px;
-        height: 160px;
+        width: 170px;
+        height: 170px;
         border-radius: 50%;
         background: linear-gradient(135deg, #374151, #4b5563);
         cursor: pointer;
@@ -95,14 +99,14 @@
         left: 50%;
         transform: translate(-50%, -50%);
         border-radius: 50%;
-        border: 2px solid rgba(59, 130, 246, 0.3);
+        border: 2px solid rgba(34, 211, 238, 0.28);
         opacity: 0;
         pointer-events: none;
       }
 
       .orb.listening {
         background: linear-gradient(135deg, #3b82f6, #8b5cf6, #06b6d4);
-        box-shadow: 0 0 60px rgba(59, 130, 246, 0.4);
+        box-shadow: 0 0 70px rgba(34, 211, 238, 0.35);
         animation: pulse-gentle 3s ease-in-out infinite;
       }
 
@@ -135,6 +139,17 @@
       .orb.speaking .ripple {
         border-color: rgba(16, 185, 129, 0.4);
         animation: ripple 0.8s ease-out infinite;
+      }
+
+      .orb.searching {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+        animation: pulse-searching 1s ease-in-out infinite;
+        box-shadow: 0 0 80px rgba(6, 182, 212, 0.5);
+      }
+
+      .orb.searching .ripple {
+        border-color: rgba(6, 182, 212, 0.4);
+        animation: ripple 1.2s ease-out infinite;
       }
 
       .ripple:nth-child(2) {
@@ -186,6 +201,16 @@
         }
       }
 
+      @keyframes pulse-searching {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.05) rotate(5deg);
+        }
+      }
+
       @keyframes ripple {
         0% {
           width: 160px;
@@ -217,6 +242,9 @@
       }
       .status-speaking {
         color: #10b981;
+      }
+      .status-searching {
+        color: #06b6d4;
       }
 
       .controls {
@@ -268,6 +296,35 @@
         max-height: 350px;
         overflow-y: auto;
         text-align: left;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(34, 211, 238, 0.5) rgba(255, 255, 255, 0.05);
+      }
+
+      /* Custom scrollbars */
+      .conversation::-webkit-scrollbar,
+      .rag-container::-webkit-scrollbar,
+      .tasks-container::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .conversation::-webkit-scrollbar-track,
+      .rag-container::-webkit-scrollbar-track,
+      .tasks-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+      }
+
+      .conversation::-webkit-scrollbar-thumb,
+      .rag-container::-webkit-scrollbar-thumb,
+      .tasks-container::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #22d3ee, #06b6d4);
+        border-radius: 10px;
+      }
+
+      .conversation::-webkit-scrollbar-thumb:hover,
+      .rag-container::-webkit-scrollbar-thumb:hover,
+      .tasks-container::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #38e7ff, #0ac0e6);
       }
 
       .message {
@@ -347,13 +404,201 @@
         margin-left: 10px;
         vertical-align: middle;
       }
+
+      /* Task List Styles */
+      .tasks-container {
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 25px;
+        text-align: left;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+      }
+
+      .tasks-header {
+        font-size: 1rem;
+        color: #a855f7;
+        margin-bottom: 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .tasks-header::before {
+        content: "📋";
+        font-size: 1.1rem;
+      }
+
+      .task-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border-left: 3px solid #4b5563;
+      }
+
+      .task-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .task-item.completed {
+        border-left-color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+      }
+
+      .task-checkbox {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 2px solid #4b5563;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+      }
+
+      .task-item.completed .task-checkbox {
+        background: linear-gradient(135deg, #10b981, #06b6d4);
+        border-color: #10b981;
+      }
+
+      .task-checkbox::after {
+        content: "";
+        width: 8px;
+        height: 12px;
+        border: solid white;
+        border-width: 0 2.5px 2.5px 0;
+        transform: rotate(45deg) translateY(-1px);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .task-item.completed .task-checkbox::after {
+        opacity: 1;
+      }
+
+      .task-description {
+        color: #d1d5db;
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+
+      .task-item.completed .task-description {
+        color: #10b981;
+      }
+
+      .tasks-progress {
+        margin-top: 15px;
+        font-size: 0.85rem;
+        color: #6b7280;
+        text-align: center;
+      }
+
+      .tasks-progress-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        margin-top: 8px;
+        overflow: hidden;
+      }
+
+      .tasks-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981, #06b6d4);
+        border-radius: 3px;
+        transition: width 0.5s ease;
+      }
+
+      /* RAG Results Panel */
+      .rag-container {
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 25px;
+        margin-bottom: 25px;
+        text-align: left;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+      }
+
+      .rag-header {
+        font-size: 1rem;
+        color: #06b6d4;
+        margin-bottom: 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .rag-header::before {
+        content: "🔍";
+        font-size: 1.1rem;
+      }
+
+      .rag-query {
+        font-size: 0.85rem;
+        color: #9ca3af;
+        margin-bottom: 12px;
+        font-style: italic;
+      }
+
+      .rag-result {
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        background: rgba(6, 182, 212, 0.08);
+        border-radius: 10px;
+        border-left: 3px solid #06b6d4;
+      }
+
+      .rag-result:last-child {
+        margin-bottom: 0;
+      }
+
+      .rag-result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .rag-result-name {
+        color: #22d3ee;
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .rag-result-score {
+        font-size: 0.75rem;
+        color: #6b7280;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+
+      .rag-result-snippet {
+        color: #9ca3af;
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>🎙️ Voice Agent <span class="feature-badge">Auto VAD</span></h1>
+      <h1>Swiss Life Insurance Advisor</h1>
       <p class="subtitle">
-        ElevenLabs STT (with VAD) + Claude LLM + ElevenLabs TTS
+        Deutschsprachige Beratung · ElevenLabs STT/TTS · Client-Side VAD ·
+        Claude Haiku 4.5 · Produkt-RAG
       </p>
 
       <div class="agent-container">
@@ -366,36 +611,70 @@
           </div>
         </div>
 
-        <div id="status">Click "Start" to begin</div>
+        <div id="status">Bereit. Tippe auf Start, sprich natürlich.</div>
 
         <div class="controls">
           <button class="btn btn-primary" id="startBtn">
-            Start Conversation
+            Gespräch starten
           </button>
           <button class="btn btn-danger" id="stopBtn" style="display: none">
-            End Call
+            Gespräch beenden
           </button>
+        </div>
+
+        <!-- Tasks Progress Container -->
+        <div class="tasks-container" id="tasksContainer" style="display: none">
+          <div class="tasks-header">Gesprächsfahrplan</div>
+          <div id="tasksList"></div>
+          <div class="tasks-progress">
+            <span id="tasksProgressText">0 of 0 completed</span>
+            <div class="tasks-progress-bar">
+              <div
+                class="tasks-progress-fill"
+                id="tasksProgressFill"
+                style="width: 0%"
+              ></div>
+            </div>
+          </div>
         </div>
 
         <div class="conversation" id="conversation" style="display: none">
           <div id="messages"></div>
           <div class="partial" id="partial" style="display: none"></div>
         </div>
+
+        <!-- RAG Results Container (below conversation) -->
+        <div class="rag-container" id="ragContainer" style="display: none">
+          <div class="rag-header">Produktrecherche</div>
+          <div class="rag-query" id="ragQuery"></div>
+          <div id="ragResults"></div>
+        </div>
       </div>
 
       <p class="footer">
-        Custom voice agent using
-        <a href="https://elevenlabs.io" target="_blank">ElevenLabs</a> +
-        <a href="https://anthropic.com" target="_blank">Claude</a>
-        <br /><br />
-        <em
-          >Just speak naturally - the agent will detect when you're done
-          talking!</em
-        >
+        Swiss Life Insurance Advisor · Client-Side VAD + Echtzeit STT/TTS (<a
+          href="https://elevenlabs.io"
+          target="_blank"
+          >ElevenLabs</a
+        >) · LLM
+        <a href="https://anthropic.com" target="_blank">Claude Haiku 4.5</a
+        ><br />
+        Produktwissen per RAG · Deutschsprachige Beratung · 2025 Preview
       </p>
     </div>
 
     <script>
+      // ============================================
+      // CONFIGURABLE SETTINGS
+      // ============================================
+      const VAD_CONFIG = {
+        vadThreshold: 0.08, // Energy threshold for barge-in (0.0-1.0) - lowered for better sensitivity
+        speechThreshold: 0.03, // Energy threshold for speech start detection - lowered for better sensitivity
+        vadDebounceTime: 800, // Debounce time for barge-in (ms) - increase to wait longer
+        silenceCommitDelay: 1200, // Silence duration before committing speech (ms) - increased to wait for user to finish
+      };
+      // ============================================
+
       class VoiceAgentClient {
         constructor() {
           this.ws = null;
@@ -416,15 +695,15 @@
 
           // Browser-side VAD for instant barge-in
           this.isAgentSpeaking = false;
-          this.vadThreshold = 0.08; // Higher threshold to avoid echo triggering
-          this.vadDebounceTime = 300; // Longer debounce to avoid repeated triggers
+          this.vadThreshold = VAD_CONFIG.vadThreshold;
+          this.vadDebounceTime = VAD_CONFIG.vadDebounceTime;
           this.lastVadTrigger = 0;
 
           // Silence detection for committing transcription
           this.isSpeaking = false;
           this.silenceStart = 0;
-          this.silenceCommitDelay = 500; // Commit after 500ms of silence
-          this.speechThreshold = 0.02; // Lower threshold for detecting speech start
+          this.silenceCommitDelay = VAD_CONFIG.silenceCommitDelay;
+          this.speechThreshold = VAD_CONFIG.speechThreshold;
         }
 
         async start() {
@@ -535,6 +814,21 @@
               // User interrupted - stop all audio playback immediately
               console.log("Clearing audio queue - user interrupted");
               this.clearAudioQueue();
+              break;
+
+            case "tasks":
+              // Initial tasks list received
+              this.onTasks && this.onTasks(data);
+              break;
+
+            case "task_update":
+              // Task completion update received
+              this.onTaskUpdate && this.onTaskUpdate(data);
+              break;
+
+            case "rag_results":
+              // RAG search results received
+              this.onRagResults && this.onRagResults(data);
               break;
 
             case "error":
@@ -883,6 +1177,8 @@
           setState("thinking", "Thinking...");
         } else if (s === "speaking") {
           setState("speaking", "Speaking...");
+        } else if (s === "searching") {
+          setState("searching", "Searching products...");
         }
       };
 
@@ -915,6 +1211,112 @@
         addMessage("assistant", text);
       };
 
+      // Task-related variables and functions
+      let currentTasks = [];
+
+      function renderTasks(tasks) {
+        const tasksContainer = document.getElementById("tasksContainer");
+        const tasksList = document.getElementById("tasksList");
+        const tasksProgressText = document.getElementById("tasksProgressText");
+        const tasksProgressFill = document.getElementById("tasksProgressFill");
+
+        if (!tasks || tasks.length === 0) {
+          tasksContainer.style.display = "none";
+          return;
+        }
+
+        currentTasks = tasks;
+        tasksContainer.style.display = "block";
+
+        // Clear and rebuild tasks list
+        tasksList.innerHTML = "";
+        let completedCount = 0;
+
+        tasks.forEach((task) => {
+          if (task.completed) completedCount++;
+
+          const taskDiv = document.createElement("div");
+          taskDiv.className = `task-item ${task.completed ? "completed" : ""}`;
+          taskDiv.id = `task-${task.id}`;
+          taskDiv.innerHTML = `
+            <div class="task-checkbox"></div>
+            <div class="task-description">${task.description}</div>
+          `;
+          tasksList.appendChild(taskDiv);
+        });
+
+        // Update progress
+        const progressPercent = (completedCount / tasks.length) * 100;
+        tasksProgressText.textContent = `${completedCount} of ${tasks.length} completed`;
+        tasksProgressFill.style.width = `${progressPercent}%`;
+      }
+
+      function updateTask(taskId, completed) {
+        const taskItem = document.getElementById(`task-${taskId}`);
+        if (taskItem) {
+          if (completed) {
+            taskItem.classList.add("completed");
+            // Add a subtle animation
+            taskItem.style.transform = "scale(1.02)";
+            setTimeout(() => {
+              taskItem.style.transform = "";
+            }, 200);
+          } else {
+            taskItem.classList.remove("completed");
+          }
+        }
+
+        // Update the currentTasks array
+        const taskIndex = currentTasks.findIndex((t) => t.id === taskId);
+        if (taskIndex !== -1) {
+          currentTasks[taskIndex].completed = completed;
+        }
+
+        // Update progress
+        const completedCount = currentTasks.filter((t) => t.completed).length;
+        const progressPercent = (completedCount / currentTasks.length) * 100;
+        document.getElementById(
+          "tasksProgressText"
+        ).textContent = `${completedCount} of ${currentTasks.length} completed`;
+        document.getElementById(
+          "tasksProgressFill"
+        ).style.width = `${progressPercent}%`;
+      }
+
+      client.onTasks = (tasks) => {
+        console.log("Received tasks:", tasks);
+        renderTasks(tasks);
+      };
+
+      client.onTaskUpdate = (data) => {
+        console.log("Task update:", data);
+        updateTask(data.id, data.completed);
+      };
+
+      client.onRagResults = (data) => {
+        console.log("RAG results:", data);
+        const ragContainer = document.getElementById("ragContainer");
+        const ragQuery = document.getElementById("ragQuery");
+        const ragResults = document.getElementById("ragResults");
+
+        ragContainer.style.display = "block";
+        ragQuery.textContent = `Query: "${data.query}"`;
+
+        ragResults.innerHTML = data.results
+          .map(
+            (r) => `
+          <div class="rag-result">
+            <div class="rag-result-header">
+              <span class="rag-result-name">${r.product}</span>
+              <span class="rag-result-score">Score: ${r.score}</span>
+            </div>
+            <div class="rag-result-snippet">${r.snippet}</div>
+          </div>
+        `
+          )
+          .join("");
+      };
+
       client.onError = (error) => {
         console.error("Error:", error);
         status.textContent = `Error: ${error}`;
@@ -935,6 +1337,43 @@
         try {
           setState("connecting", "Connecting...");
           await client.start();
+
+          // Send configuration with tasks (system prompt is defined in backend)
+          const config = {
+            type: "config",
+            tasks: [
+              {
+                id: 1,
+                description:
+                  "Begrüssung und Vorstellung als Swiss Life Berater",
+              },
+              { id: 2, description: "Namen des Kunden erfragen" },
+              {
+                id: 3,
+                description:
+                  "Versicherungssituation und finanzielle Ziele verstehen",
+              },
+              {
+                id: 4,
+                description:
+                  "Passendes Swiss Life Produkt empfehlen und erklären",
+              },
+              { id: 5, description: "Interesse an Angebot bestätigen" },
+              { id: 6, description: "Notwendige Daten für Angebot erfassen" },
+              {
+                id: 7,
+                description: "Nächste Schritte erklären und verabschieden",
+              },
+            ],
+          };
+
+          // Wait for WebSocket to be ready before sending config
+          setTimeout(() => {
+            if (client.ws && client.ws.readyState === WebSocket.OPEN) {
+              client.ws.send(JSON.stringify(config));
+            }
+          }, 500);
+
           // Status will be set to 'listening' by the server
         } catch (error) {
           setState("disconnected", `Error: ${error.message}`);
