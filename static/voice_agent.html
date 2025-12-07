@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voice Agent</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f0f23 0%,
+          #1a1a3e 50%,
+          #0d1f3c 100%
+        );
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        padding: 20px;
+      }
+
+      .container {
+        text-align: center;
+        max-width: 700px;
+        width: 100%;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+        background: linear-gradient(90deg, #00d4ff, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        color: #6b7280;
+        margin-bottom: 30px;
+        font-size: 1rem;
+      }
+
+      .agent-container {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 24px;
+        padding: 40px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      /* Orb animation container */
+      .orb-container {
+        position: relative;
+        width: 220px;
+        height: 220px;
+        margin: 0 auto 30px;
+      }
+
+      .orb {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #374151, #4b5563);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 30px rgba(107, 114, 128, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+      }
+
+      .orb:hover {
+        transform: translate(-50%, -50%) scale(1.05);
+      }
+
+      /* Ripple rings for active states */
+      .ripple {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        border: 2px solid rgba(59, 130, 246, 0.3);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .orb.listening {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6, #06b6d4);
+        box-shadow: 0 0 60px rgba(59, 130, 246, 0.4);
+        animation: pulse-gentle 3s ease-in-out infinite;
+      }
+
+      .orb.listening .ripple {
+        animation: ripple 2.5s ease-out infinite;
+      }
+
+      .orb.user-speaking {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+        animation: pulse-active 1s ease-in-out infinite;
+        box-shadow: 0 0 80px rgba(245, 158, 11, 0.5);
+      }
+
+      .orb.user-speaking .ripple {
+        border-color: rgba(245, 158, 11, 0.4);
+        animation: ripple 1s ease-out infinite;
+      }
+
+      .orb.thinking {
+        background: linear-gradient(135deg, #8b5cf6, #a855f7);
+        animation: pulse-thinking 1.5s ease-in-out infinite;
+      }
+
+      .orb.speaking {
+        background: linear-gradient(135deg, #10b981, #06b6d4);
+        animation: pulse-speaking 0.6s ease-in-out infinite;
+        box-shadow: 0 0 100px rgba(16, 185, 129, 0.6);
+      }
+
+      .orb.speaking .ripple {
+        border-color: rgba(16, 185, 129, 0.4);
+        animation: ripple 0.8s ease-out infinite;
+      }
+
+      .ripple:nth-child(2) {
+        animation-delay: 0.3s;
+      }
+      .ripple:nth-child(3) {
+        animation-delay: 0.6s;
+      }
+
+      @keyframes pulse-gentle {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.03);
+        }
+      }
+
+      @keyframes pulse-active {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.08);
+        }
+      }
+
+      @keyframes pulse-thinking {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.05);
+          opacity: 0.8;
+        }
+      }
+
+      @keyframes pulse-speaking {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.1);
+        }
+      }
+
+      @keyframes ripple {
+        0% {
+          width: 160px;
+          height: 160px;
+          opacity: 0.6;
+        }
+        100% {
+          width: 220px;
+          height: 220px;
+          opacity: 0;
+        }
+      }
+
+      #status {
+        font-size: 1.3rem;
+        color: #9ca3af;
+        margin-bottom: 25px;
+        min-height: 35px;
+      }
+
+      .status-listening {
+        color: #3b82f6;
+      }
+      .status-user-speaking {
+        color: #f59e0b;
+      }
+      .status-thinking {
+        color: #a855f7;
+      }
+      .status-speaking {
+        color: #10b981;
+      }
+
+      .controls {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 30px;
+      }
+
+      .btn {
+        padding: 14px 32px;
+        border-radius: 30px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+      }
+
+      .btn-primary {
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        color: white;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+      }
+
+      .btn-danger {
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+        color: white;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .conversation {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 16px;
+        padding: 20px;
+        max-height: 350px;
+        overflow-y: auto;
+        text-align: left;
+      }
+
+      .message {
+        margin-bottom: 15px;
+        padding: 14px 18px;
+        border-radius: 14px;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .message.user {
+        background: rgba(59, 130, 246, 0.2);
+        border-left: 4px solid #3b82f6;
+      }
+
+      .message.assistant {
+        background: rgba(16, 185, 129, 0.2);
+        border-left: 4px solid #10b981;
+      }
+
+      .message .role {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .message .content {
+        color: #e5e7eb;
+        line-height: 1.6;
+        font-size: 1.05rem;
+      }
+
+      .partial {
+        color: #6b7280;
+        font-style: italic;
+        padding: 12px 18px;
+        margin-bottom: 15px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 10px;
+      }
+
+      .footer {
+        margin-top: 30px;
+        color: #4b5563;
+        font-size: 0.85rem;
+      }
+
+      .footer a {
+        color: #6b7280;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        color: #00d4ff;
+      }
+
+      .feature-badge {
+        display: inline-block;
+        background: linear-gradient(90deg, #10b981, #06b6d4);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 10px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎙️ Voice Agent <span class="feature-badge">Auto VAD</span></h1>
+      <p class="subtitle">
+        ElevenLabs STT (with VAD) + Claude LLM + ElevenLabs TTS
+      </p>
+
+      <div class="agent-container">
+        <div class="orb-container">
+          <div class="orb" id="orb">
+            🎤
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+          </div>
+        </div>
+
+        <div id="status">Click "Start" to begin</div>
+
+        <div class="controls">
+          <button class="btn btn-primary" id="startBtn">
+            Start Conversation
+          </button>
+          <button class="btn btn-danger" id="stopBtn" style="display: none">
+            End Call
+          </button>
+        </div>
+
+        <div class="conversation" id="conversation" style="display: none">
+          <div id="messages"></div>
+          <div class="partial" id="partial" style="display: none"></div>
+        </div>
+      </div>
+
+      <p class="footer">
+        Custom voice agent using
+        <a href="https://elevenlabs.io" target="_blank">ElevenLabs</a> +
+        <a href="https://anthropic.com" target="_blank">Claude</a>
+        <br /><br />
+        <em
+          >Just speak naturally - the agent will detect when you're done
+          talking!</em
+        >
+      </p>
+    </div>
+
+    <script>
+      class VoiceAgentClient {
+        constructor() {
+          this.ws = null;
+          this.audioContext = null;
+          this.mediaStream = null;
+          this.isConnected = false;
+          this.isStreaming = false;
+
+          // Audio capture
+          this.scriptProcessor = null;
+          this.mediaStreamSource = null;
+
+          // Audio playback
+          this.audioQueue = [];
+          this.nextPlayTime = 0;
+          this.activeSources = []; // Track active audio sources for interruption
+          this.gainNode = null; // Master gain for instant muting
+
+          // Browser-side VAD for instant barge-in
+          this.isAgentSpeaking = false;
+          this.vadThreshold = 0.08; // Higher threshold to avoid echo triggering
+          this.vadDebounceTime = 300; // Longer debounce to avoid repeated triggers
+          this.lastVadTrigger = 0;
+
+          // Silence detection for committing transcription
+          this.isSpeaking = false;
+          this.silenceStart = 0;
+          this.silenceCommitDelay = 500; // Commit after 500ms of silence
+          this.speechThreshold = 0.02; // Lower threshold for detecting speech start
+        }
+
+        async start() {
+          try {
+            // Request microphone
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                sampleRate: 16000,
+                channelCount: 1,
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+            });
+
+            // Create audio context
+            this.audioContext = new AudioContext({ sampleRate: 16000 });
+
+            // Create master gain node for instant muting
+            this.gainNode = this.audioContext.createGain();
+            this.gainNode.connect(this.audioContext.destination);
+
+            // Connect WebSocket
+            await this.connectWebSocket();
+
+            // Start streaming audio
+            this.startAudioStream();
+
+            return true;
+          } catch (error) {
+            console.error("Start error:", error);
+            throw error;
+          }
+        }
+
+        async connectWebSocket() {
+          const wsUrl = `ws://${window.location.host}/ws`;
+
+          return new Promise((resolve, reject) => {
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+              console.log("WebSocket connected");
+              this.isConnected = true;
+              resolve();
+            };
+
+            this.ws.onmessage = (event) => {
+              this.handleMessage(JSON.parse(event.data));
+            };
+
+            this.ws.onerror = (error) => {
+              console.error("WebSocket error:", error);
+              reject(error);
+            };
+
+            this.ws.onclose = () => {
+              console.log("WebSocket closed");
+              this.isConnected = false;
+              this.isStreaming = false;
+              this.onDisconnect && this.onDisconnect();
+            };
+          });
+        }
+
+        handleMessage(msg) {
+          const { type, data, audio } = msg;
+
+          switch (type) {
+            case "status":
+              this.onStatus && this.onStatus(data);
+              break;
+
+            case "partial_transcript":
+              this.onPartialTranscript && this.onPartialTranscript(data);
+              break;
+
+            case "user_transcript":
+              this.onUserTranscript && this.onUserTranscript(data);
+              break;
+
+            case "partial_response":
+              this.onPartialResponse && this.onPartialResponse(data);
+              break;
+
+            case "agent_response":
+              this.onAgentResponse && this.onAgentResponse(data);
+              break;
+
+            case "audio":
+              // Audio comes in 'audio' field, not 'data'
+              console.log(
+                "Received audio chunk, length:",
+                audio ? audio.length : 0
+              );
+              if (audio) {
+                this.isAgentSpeaking = true; // Mark agent as speaking
+                this.queueAudio(audio);
+              }
+              break;
+
+            case "audio_done":
+              // All audio chunks received
+              console.log("Audio playback complete signal received");
+              break;
+
+            case "clear_audio":
+              // User interrupted - stop all audio playback immediately
+              console.log("Clearing audio queue - user interrupted");
+              this.clearAudioQueue();
+              break;
+
+            case "error":
+              this.onError && this.onError(data);
+              break;
+          }
+        }
+
+        startAudioStream() {
+          this.mediaStreamSource = this.audioContext.createMediaStreamSource(
+            this.mediaStream
+          );
+          // Use smallest practical buffer (1024 samples) for fastest audio streaming
+          // At 48kHz, this is ~21ms per chunk
+          this.scriptProcessor = this.audioContext.createScriptProcessor(
+            1024,
+            1,
+            1
+          );
+
+          this.scriptProcessor.onaudioprocess = (e) => {
+            if (!this.isConnected) return;
+
+            const inputData = e.inputBuffer.getChannelData(0);
+
+            // Calculate audio energy for instant VAD
+            let sum = 0;
+            for (let i = 0; i < inputData.length; i++) {
+              sum += inputData[i] * inputData[i];
+            }
+            const rms = Math.sqrt(sum / inputData.length);
+
+            // If agent is speaking and user starts talking, immediately stop playback
+            const now = Date.now();
+            if (
+              this.isAgentSpeaking &&
+              rms > this.vadThreshold &&
+              now - this.lastVadTrigger > this.vadDebounceTime
+            ) {
+              console.log(
+                "Browser VAD: User speaking while agent plays - stopping audio! RMS:",
+                rms.toFixed(4)
+              );
+              this.lastVadTrigger = now;
+              this.clearAudioQueue();
+              // Notify server that user interrupted
+              if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(
+                  JSON.stringify({ type: "user_speaking", interrupted: true })
+                );
+              }
+            }
+
+            // Silence detection for committing transcription
+            if (rms > this.speechThreshold) {
+              // User is speaking
+              this.isSpeaking = true;
+              this.silenceStart = 0;
+            } else if (this.isSpeaking) {
+              // User was speaking but now silent
+              if (this.silenceStart === 0) {
+                this.silenceStart = now;
+              } else if (now - this.silenceStart > this.silenceCommitDelay) {
+                // Silence lasted long enough - commit the transcription
+                console.log(
+                  "Browser VAD: Silence detected, committing transcription"
+                );
+                this.isSpeaking = false;
+                this.silenceStart = 0;
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                  this.ws.send(JSON.stringify({ type: "commit" }));
+                }
+              }
+            }
+
+            // Convert Float32 to Int16
+            const int16Data = new Int16Array(inputData.length);
+            for (let i = 0; i < inputData.length; i++) {
+              const s = Math.max(-1, Math.min(1, inputData[i]));
+              int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+            }
+
+            // Send as base64
+            const base64 = this.arrayBufferToBase64(int16Data.buffer);
+            this.ws.send(
+              JSON.stringify({
+                type: "audio",
+                audio: base64,
+              })
+            );
+          };
+
+          this.mediaStreamSource.connect(this.scriptProcessor);
+          this.scriptProcessor.connect(this.audioContext.destination);
+
+          this.isStreaming = true;
+        }
+
+        arrayBufferToBase64(buffer) {
+          const bytes = new Uint8Array(buffer);
+          let binary = "";
+          for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          return btoa(binary);
+        }
+
+        base64ToArrayBuffer(base64) {
+          const binary = atob(base64);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          return bytes.buffer;
+        }
+
+        queueAudio(base64Audio) {
+          // Resume AudioContext if suspended (browser autoplay policy)
+          if (this.audioContext.state === "suspended") {
+            this.audioContext.resume();
+          }
+
+          const arrayBuffer = this.base64ToArrayBuffer(base64Audio);
+
+          // Convert Int16 to Float32
+          const int16Data = new Int16Array(arrayBuffer);
+          const float32Data = new Float32Array(int16Data.length);
+          for (let i = 0; i < int16Data.length; i++) {
+            float32Data[i] = int16Data[i] / 32768;
+          }
+
+          // Create audio buffer
+          const audioBuffer = this.audioContext.createBuffer(
+            1,
+            float32Data.length,
+            16000
+          );
+          audioBuffer.getChannelData(0).set(float32Data);
+
+          // Schedule playback
+          const currentTime = this.audioContext.currentTime;
+          const startTime = Math.max(currentTime, this.nextPlayTime);
+
+          const source = this.audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(this.gainNode); // Connect to gain node for instant muting
+          source.start(startTime);
+
+          // Track this source for potential interruption
+          this.activeSources.push(source);
+
+          // Report to server that we're playing audio
+          if (this.activeSources.length === 1) {
+            this.sendAudioStatus(true);
+          }
+
+          source.onended = () => {
+            const idx = this.activeSources.indexOf(source);
+            if (idx > -1) this.activeSources.splice(idx, 1);
+
+            // When all audio is done, mark agent as not speaking
+            if (this.activeSources.length === 0) {
+              this.isAgentSpeaking = false;
+              // Only send ONE status update when truly done
+              this.sendAudioStatus(false);
+            }
+          };
+
+          this.nextPlayTime = startTime + audioBuffer.duration;
+
+          console.log(
+            "Queued audio, duration:",
+            audioBuffer.duration.toFixed(3),
+            "starts at:",
+            startTime.toFixed(3)
+          );
+        }
+
+        sendAudioStatus(playing) {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(
+              JSON.stringify({ type: "audio_status", playing: playing })
+            );
+            console.log("Audio status:", playing ? "playing" : "stopped");
+          }
+        }
+
+        clearAudioQueue() {
+          console.log("=== CLEARING AUDIO QUEUE ===");
+          console.log("Active sources to stop:", this.activeSources.length);
+
+          // Mark agent as not speaking
+          this.isAgentSpeaking = false;
+
+          // IMMEDIATELY mute the gain node to silence all audio
+          if (this.gainNode) {
+            this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+            console.log("Gain node muted");
+          }
+
+          // Stop all currently playing and scheduled audio sources
+          for (const source of this.activeSources) {
+            try {
+              source.disconnect();
+              source.stop(0); // Stop immediately
+            } catch (e) {
+              // Source might already be stopped
+            }
+          }
+          this.activeSources = [];
+          this.nextPlayTime = 0;
+
+          // Restore gain for future audio
+          if (this.gainNode) {
+            this.gainNode.gain.setValueAtTime(
+              1,
+              this.audioContext.currentTime + 0.1
+            );
+          }
+
+          console.log("=== AUDIO QUEUE CLEARED ===");
+        }
+
+        stop() {
+          this.isStreaming = false;
+
+          // Clear any playing audio
+          this.clearAudioQueue();
+
+          if (this.scriptProcessor) {
+            this.scriptProcessor.disconnect();
+            this.scriptProcessor = null;
+          }
+
+          if (this.mediaStreamSource) {
+            this.mediaStreamSource.disconnect();
+            this.mediaStreamSource = null;
+          }
+
+          if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+          }
+
+          if (this.mediaStream) {
+            this.mediaStream.getTracks().forEach((track) => track.stop());
+            this.mediaStream = null;
+          }
+
+          if (this.audioContext) {
+            this.audioContext.close();
+            this.audioContext = null;
+          }
+
+          this.isConnected = false;
+          this.nextPlayTime = 0;
+        }
+      }
+
+      // UI Controller
+      const client = new VoiceAgentClient();
+
+      const orb = document.getElementById("orb");
+      const status = document.getElementById("status");
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+      const conversation = document.getElementById("conversation");
+      const messages = document.getElementById("messages");
+      const partial = document.getElementById("partial");
+
+      let currentState = "disconnected";
+      let hasPartialTranscript = false;
+
+      function setState(state, text) {
+        currentState = state;
+        status.textContent = text || state;
+        status.className = "";
+
+        // Reset orb classes
+        orb.className = "orb";
+
+        switch (state) {
+          case "disconnected":
+            orb.innerHTML =
+              '🎤<div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>';
+            startBtn.style.display = "block";
+            stopBtn.style.display = "none";
+            break;
+
+          case "connecting":
+            orb.innerHTML =
+              '⏳<div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>';
+            startBtn.disabled = true;
+            break;
+
+          case "listening":
+            orb.classList.add("listening");
+            orb.innerHTML =
+              '👂<div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>';
+            status.className = "status-listening";
+            startBtn.style.display = "none";
+            stopBtn.style.display = "block";
+            conversation.style.display = "block";
+            break;
+
+          case "user-speaking":
+            orb.classList.add("user-speaking");
+            orb.innerHTML =
+              '🗣️<div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>';
+            status.className = "status-user-speaking";
+            break;
+
+          case "thinking":
+            orb.classList.add("thinking");
+            orb.innerHTML =
+              '🤔<div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>';
+            status.className = "status-thinking";
+            break;
+
+          case "speaking":
+            orb.classList.add("speaking");
+            orb.innerHTML =
+              '🔊<div class="ripple"></div><div class="ripple"></div><div class="ripple"></div>';
+            status.className = "status-speaking";
+            break;
+        }
+      }
+
+      function addMessage(role, content) {
+        const div = document.createElement("div");
+        div.className = `message ${role}`;
+        div.innerHTML = `
+                <div class="role">${role === "user" ? "You" : "Agent"}</div>
+                <div class="content">${content}</div>
+            `;
+        messages.appendChild(div);
+        conversation.scrollTop = conversation.scrollHeight;
+      }
+
+      // Event handlers
+      client.onStatus = (s) => {
+        console.log("Status:", s);
+        if (s === "listening") {
+          setState("listening", "Listening... just speak naturally");
+        } else if (s === "thinking") {
+          setState("thinking", "Thinking...");
+        } else if (s === "speaking") {
+          setState("speaking", "Speaking...");
+        }
+      };
+
+      client.onPartialTranscript = (text) => {
+        if (text.trim()) {
+          if (!hasPartialTranscript) {
+            setState("user-speaking", "Hearing you...");
+            hasPartialTranscript = true;
+          }
+          partial.textContent = `"${text}"`;
+          partial.style.display = "block";
+          conversation.scrollTop = conversation.scrollHeight;
+        }
+      };
+
+      client.onUserTranscript = (text) => {
+        hasPartialTranscript = false;
+        partial.style.display = "none";
+        addMessage("user", text);
+      };
+
+      client.onPartialResponse = (text) => {
+        partial.textContent = text;
+        partial.style.display = "block";
+        conversation.scrollTop = conversation.scrollHeight;
+      };
+
+      client.onAgentResponse = (text) => {
+        partial.style.display = "none";
+        addMessage("assistant", text);
+      };
+
+      client.onError = (error) => {
+        console.error("Error:", error);
+        status.textContent = `Error: ${error}`;
+        setTimeout(() => {
+          if (currentState !== "disconnected") {
+            setState("listening", "Listening... just speak naturally");
+          }
+        }, 3000);
+      };
+
+      client.onDisconnect = () => {
+        setState("disconnected", 'Disconnected - Click "Start" to begin');
+        startBtn.disabled = false;
+      };
+
+      // Start button
+      startBtn.addEventListener("click", async () => {
+        try {
+          setState("connecting", "Connecting...");
+          await client.start();
+          // Status will be set to 'listening' by the server
+        } catch (error) {
+          setState("disconnected", `Error: ${error.message}`);
+          startBtn.disabled = false;
+        }
+      });
+
+      // Stop button
+      stopBtn.addEventListener("click", () => {
+        client.stop();
+        setState("disconnected", 'Click "Start" to begin');
+      });
+    </script>
+  </body>
+</html>
