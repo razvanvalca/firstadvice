@@ -1,13 +1,6 @@
-# Voice Agent Dependencies
+# Voice Agent Server Dependencies
 aiohttp>=3.9.0          # Async HTTP + WebSocket server
-websockets>=12.0        # WebSocket client for ElevenLabs API
+websockets>=12.0        # WebSocket client for ElevenLabs STT
 numpy>=1.24.0           # Audio processing
 python-dotenv>=1.0.0    # Environment variables
-aiofiles>=23.0.0        # Async file operations
-
-# Optional - for CLI demo mode
-torch>=2.0.0            # For Silero VAD (optional)
-torchaudio>=2.0.0       # Audio utilities (optional)
-pyaudio>=0.2.14         # Microphone input (optional)
-faster-whisper>=0.10.0  # Local STT fallback (optional)
-webrtcvad>=2.0.10       # Alternative VAD (optional)
+scikit-learn>=1.3.0     # TF-IDF for product RAG search
