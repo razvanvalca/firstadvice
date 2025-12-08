@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Swiss Life Insurance Advisor</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+      :root {
+        /* Colors */
+        --color-bg-start: #050712;
+        --color-bg-mid: #0c1224;
+        --color-bg-end: #061020;
+        --color-accent-blue: #12395f;
+        --color-accent-teal: #1b6e7c;
+        --color-cyan: #22d3ee;
+        --color-purple: #c084fc;
+        --color-gray-light: #9ca3af;
+        --color-gray: #6b7280;
+        --color-gray-dark: #4b5563;
+        --color-white-faint: rgba(255, 255, 255, 0.03);
+        --color-white-dim: rgba(255, 255, 255, 0.08);
+
+        /* State colors */
+        --color-listening: #3b82f6;
+        --color-user-speaking: #f59e0b;
+        --color-thinking: #a855f7;
+        --color-speaking: #10b981;
+        --color-searching: #06b6d4;
+        --color-danger: #ef4444;
+
+        /* Sizing */
+        --orb-size: 170px;
+        --container-max-width: 900px;
+        --border-radius-lg: 24px;
+        --border-radius-md: 16px;
+        --border-radius-sm: 10px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Space Grotesk", "Segoe UI", system-ui, -apple-system,
+          sans-serif;
+        background: radial-gradient(
+            circle at 20% 20%,
+            var(--color-accent-blue) 0,
+            transparent 35%
+          ),
+          radial-gradient(
+            circle at 80% 0%,
+            var(--color-accent-teal) 0,
+            transparent 30%
+          ),
+          linear-gradient(
+            135deg,
+            var(--color-bg-start) 0%,
+            var(--color-bg-mid) 45%,
+            var(--color-bg-end) 100%
+          );
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        padding: 20px;
+      }
+
+      .container {
+        text-align: center;
+        max-width: var(--container-max-width);
+        width: 100%;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+        background: linear-gradient(
+          110deg,
+          var(--color-cyan),
+          var(--color-purple)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        color: var(--color-gray-light);
+        margin-bottom: 26px;
+        font-size: 1.05rem;
+      }
+
+      .agent-container {
+        background: var(--color-white-faint);
+        border-radius: var(--border-radius-lg);
+        padding: 32px;
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--color-white-dim);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+      }
+
+      /* Orb animation container */
+      .orb-container {
+        position: relative;
+        width: 240px;
+        height: 240px;
+        margin: 0 auto 26px;
+      }
+
+      .orb {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: var(--orb-size);
+        height: var(--orb-size);
+        border-radius: 50%;
+        background: linear-gradient(135deg, #374151, var(--color-gray-dark));
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 30px rgba(107, 114, 128, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+      }
+
+      .orb:hover {
+        transform: translate(-50%, -50%) scale(1.05);
+      }
+
+      /* Ripple rings for active states */
+      .ripple {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        border: 2px solid rgba(34, 211, 238, 0.28);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Orb state styles */
+      .orb.listening {
+        background: linear-gradient(
+          135deg,
+          var(--color-listening),
+          #8b5cf6,
+          #06b6d4
+        );
+        box-shadow: 0 0 70px rgba(34, 211, 238, 0.35);
+        animation: pulse-gentle 3s ease-in-out infinite;
+      }
+
+      .orb.listening .ripple {
+        animation: ripple 2.5s ease-out infinite;
+      }
+
+      .orb.user-speaking {
+        background: linear-gradient(
+          135deg,
+          var(--color-user-speaking),
+          var(--color-danger)
+        );
+        animation: pulse-active 1s ease-in-out infinite;
+        box-shadow: 0 0 80px rgba(245, 158, 11, 0.5);
+      }
+
+      .orb.user-speaking .ripple {
+        border-color: rgba(245, 158, 11, 0.4);
+        animation: ripple 1s ease-out infinite;
+      }
+
+      .orb.thinking {
+        background: linear-gradient(135deg, #8b5cf6, var(--color-thinking));
+        animation: pulse-thinking 1.5s ease-in-out infinite;
+      }
+
+      .orb.speaking {
+        background: linear-gradient(135deg, var(--color-speaking), #06b6d4);
+        animation: pulse-speaking 0.6s ease-in-out infinite;
+        box-shadow: 0 0 100px rgba(16, 185, 129, 0.6);
+      }
+
+      .orb.speaking .ripple {
+        border-color: rgba(16, 185, 129, 0.4);
+        animation: ripple 0.8s ease-out infinite;
+      }
+
+      .orb.searching {
+        background: linear-gradient(135deg, var(--color-searching), #0891b2);
+        animation: pulse-searching 1s ease-in-out infinite;
+        box-shadow: 0 0 80px rgba(6, 182, 212, 0.5);
+      }
+
+      .orb.searching .ripple {
+        border-color: rgba(6, 182, 212, 0.4);
+        animation: ripple 1.2s ease-out infinite;
+      }
+
+      .ripple:nth-child(2) {
+        animation-delay: 0.3s;
+      }
+      .ripple:nth-child(3) {
+        animation-delay: 0.6s;
+      }
+
+      /* Animations */
+      @keyframes pulse-gentle {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.03);
+        }
+      }
+
+      @keyframes pulse-active {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.08);
+        }
+      }
+
+      @keyframes pulse-thinking {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.05);
+          opacity: 0.8;
+        }
+      }
+
+      @keyframes pulse-speaking {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.1);
+        }
+      }
+
+      @keyframes pulse-searching {
+        0%,
+        100% {
+          transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.05) rotate(5deg);
+        }
+      }
+
+      @keyframes ripple {
+        0% {
+          width: 160px;
+          height: 160px;
+          opacity: 0.6;
+        }
+        100% {
+          width: 220px;
+          height: 220px;
+          opacity: 0;
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Status text */
+      #status {
+        font-size: 1.3rem;
+        color: var(--color-gray-light);
+        margin-bottom: 25px;
+        min-height: 35px;
+      }
+
+      .status-listening {
+        color: var(--color-listening);
+      }
+      .status-user-speaking {
+        color: var(--color-user-speaking);
+      }
+      .status-thinking {
+        color: var(--color-thinking);
+      }
+      .status-speaking {
+        color: var(--color-speaking);
+      }
+      .status-searching {
+        color: var(--color-searching);
+      }
+
+      /* Controls */
+      .controls {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 30px;
+      }
+
+      .btn {
+        padding: 14px 32px;
+        border-radius: 30px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+      }
+
+      .btn-primary {
+        background: linear-gradient(90deg, var(--color-listening), #8b5cf6);
+        color: white;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+      }
+
+      .btn-danger {
+        background: linear-gradient(90deg, var(--color-danger), #dc2626);
+        color: white;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Conversation area */
+      .conversation {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: var(--border-radius-md);
+        padding: 20px;
+        max-height: 350px;
+        overflow-y: auto;
+        text-align: left;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(34, 211, 238, 0.5) rgba(255, 255, 255, 0.05);
+      }
+
+      .conversation::-webkit-scrollbar,
+      .rag-container::-webkit-scrollbar,
+      .tasks-container::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .conversation::-webkit-scrollbar-track,
+      .rag-container::-webkit-scrollbar-track,
+      .tasks-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+      }
+
+      .conversation::-webkit-scrollbar-thumb,
+      .rag-container::-webkit-scrollbar-thumb,
+      .tasks-container::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--color-cyan), #06b6d4);
+        border-radius: 10px;
+      }
+
+      /* Messages */
+      .message {
+        margin-bottom: 15px;
+        padding: 14px 18px;
+        border-radius: 14px;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .message.user {
+        background: rgba(59, 130, 246, 0.2);
+        border-left: 4px solid var(--color-listening);
+      }
+
+      .message.assistant {
+        background: rgba(16, 185, 129, 0.2);
+        border-left: 4px solid var(--color-speaking);
+      }
+
+      .message .role {
+        font-size: 0.75rem;
+        color: var(--color-gray-light);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .message .content {
+        color: #e5e7eb;
+        line-height: 1.6;
+        font-size: 1.05rem;
+      }
+
+      .partial {
+        color: var(--color-gray);
+        font-style: italic;
+        padding: 12px 18px;
+        margin-bottom: 15px;
+        background: var(--color-white-faint);
+        border-radius: var(--border-radius-sm);
+      }
+
+      /* Task list */
+      .tasks-container {
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: var(--border-radius-md);
+        padding: 20px;
+        margin-bottom: 25px;
+        text-align: left;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+      }
+
+      .tasks-header {
+        font-size: 1rem;
+        color: var(--color-thinking);
+        margin-bottom: 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .tasks-header::before {
+        content: "📋";
+        font-size: 1.1rem;
+      }
+
+      .task-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        background: var(--color-white-faint);
+        border-radius: var(--border-radius-sm);
+        transition: all 0.3s ease;
+        border-left: 3px solid var(--color-gray-dark);
+      }
+
+      .task-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .task-item.completed {
+        border-left-color: var(--color-speaking);
+        background: rgba(16, 185, 129, 0.1);
+      }
+
+      .task-checkbox {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 2px solid var(--color-gray-dark);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+      }
+
+      .task-item.completed .task-checkbox {
+        background: linear-gradient(135deg, var(--color-speaking), #06b6d4);
+        border-color: var(--color-speaking);
+      }
+
+      .task-checkbox::after {
+        content: "";
+        width: 8px;
+        height: 12px;
+        border: solid white;
+        border-width: 0 2.5px 2.5px 0;
+        transform: rotate(45deg) translateY(-1px);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .task-item.completed .task-checkbox::after {
+        opacity: 1;
+      }
+
+      .task-description {
+        color: #d1d5db;
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+
+      .task-item.completed .task-description {
+        color: var(--color-speaking);
+      }
+
+      .tasks-progress {
+        margin-top: 15px;
+        font-size: 0.85rem;
+        color: var(--color-gray);
+        text-align: center;
+      }
+
+      .tasks-progress-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        margin-top: 8px;
+        overflow: hidden;
+      }
+
+      .tasks-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-speaking), #06b6d4);
+        border-radius: 3px;
+        transition: width 0.5s ease;
+      }
+
+      /* RAG Results */
+      .rag-container {
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: var(--border-radius-md);
+        padding: 20px;
+        margin-top: 25px;
+        margin-bottom: 25px;
+        text-align: left;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+      }
+
+      .rag-header {
+        font-size: 1rem;
+        color: var(--color-searching);
+        margin-bottom: 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .rag-header::before {
+        content: "🔍";
+        font-size: 1.1rem;
+      }
+
+      .rag-query {
+        font-size: 0.85rem;
+        color: var(--color-gray-light);
+        margin-bottom: 12px;
+        font-style: italic;
+      }
+
+      .rag-result {
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        background: rgba(6, 182, 212, 0.08);
+        border-radius: var(--border-radius-sm);
+        border-left: 3px solid var(--color-searching);
+      }
+
+      .rag-result:last-child {
+        margin-bottom: 0;
+      }
+
+      .rag-result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .rag-result-name {
+        color: var(--color-cyan);
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .rag-result-score {
+        font-size: 0.75rem;
+        color: var(--color-gray);
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 8px;
+        border-radius: 10px;
+      }
+
+      .rag-result-snippet {
+        color: var(--color-gray-light);
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+
+      /* Footer */
+      .footer {
+        margin-top: 30px;
+        color: var(--color-gray-dark);
+        font-size: 0.85rem;
+      }
+
+      .footer a {
+        color: var(--color-gray);
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        color: #00d4ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Swiss Life Insurance Advisor</h1>
+      <p class="subtitle">
+        Deutschsprachige Beratung · ElevenLabs STT/TTS · Client-Side VAD ·
+        Claude Haiku 4.5 · Produkt-RAG
+      </p>
+
+      <div class="agent-container">
+        <div class="orb-container">
+          <div class="orb" id="orb">
+            🎤
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+            <div class="ripple"></div>
+          </div>
+        </div>
+
+        <div id="status">Bereit. Tippe auf Start, sprich natürlich.</div>
+
+        <div class="controls">
+          <button class="btn btn-primary" id="startBtn">
+            Gespräch starten
+          </button>
+          <button class="btn btn-danger" id="stopBtn" style="display: none">
+            Gespräch beenden
+          </button>
+        </div>
+
+        <!-- Tasks Progress -->
+        <div class="tasks-container" id="tasksContainer" style="display: none">
+          <div class="tasks-header">Gesprächsfahrplan</div>
+          <div id="tasksList"></div>
+          <div class="tasks-progress">
+            <span id="tasksProgressText">0 of 0 completed</span>
+            <div class="tasks-progress-bar">
+              <div
+                class="tasks-progress-fill"
+                id="tasksProgressFill"
+                style="width: 0%"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conversation -->
+        <div class="conversation" id="conversation" style="display: none">
+          <div id="messages"></div>
+          <div class="partial" id="partial" style="display: none"></div>
+        </div>
+
+        <!-- RAG Results -->
+        <div class="rag-container" id="ragContainer" style="display: none">
+          <div class="rag-header">Produktrecherche</div>
+          <div class="rag-query" id="ragQuery"></div>
+          <div id="ragResults"></div>
+        </div>
+      </div>
+
+      <p class="footer">
+        Swiss Life Insurance Advisor · Client-Side VAD + Echtzeit STT/TTS (<a
+          href="https://elevenlabs.io"
+          target="_blank"
+          >ElevenLabs</a
+        >) · LLM
+        <a href="https://anthropic.com" target="_blank">Claude Haiku 4.5</a
+        ><br />
+        Produktwissen per RAG · Deutschsprachige Beratung · 2025 Preview
+      </p>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>
