@@ -82,7 +82,8 @@ class VoiceAgentClient {
   }
 
   async connectWebSocket() {
-    const wsUrl = `ws://${window.location.host}/ws`;
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
 
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(wsUrl);
