@@ -164,32 +164,147 @@ The `config/settings.py` module provides typed configuration via Python dataclas
 ### Voice Pipeline
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           BROWSER                                    │
-├─────────────────────────────────────────────────────────────────────┤
-│  Microphone → VAD → Audio Chunks → WebSocket → Server               │
-│                                                                      │
-│  Audio Playback ← PCM Chunks ← WebSocket ← Server                   │
-└─────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                           SERVER                                     │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Audio → ElevenLabs Scribe STT → Transcript                         │
-│                      │                                               │
-│                      ▼                                               │
-│  Transcript → TF-IDF RAG → Context (top 3 products)                 │
-│                      │                                               │
-│                      ▼                                               │
-│  Context + Transcript → Claude AI → Response (streamed)             │
-│                      │                                               │
-│                      ▼                                               │
-│  Response → Sentence Splitter → ElevenLabs TTS → Audio              │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                                        BROWSER                                            │
+│                                      (app.js)                                             │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                           │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────────┐    ┌───────────────────────┐ │
+│   │ Microphone  │───▶│ VAD Engine  │───▶│ PCM Encoder     │───▶│ WebSocket Client      │ │
+│   │ getUserMedia│    │ - Barge-in  │    │ - 16kHz/16-bit  │    │ - JSON + Base64 audio │ │
+│   │ 16kHz mono  │    │ - Silence   │    │ - 1024 samples  │    │ - Events: audio,      │ │
+│   └─────────────┘    │   detection │    │   per chunk     │    │   commit, interrupt   │ │
+│                      └─────────────┘    └─────────────────┘    └───────────┬───────────┘ │
+│                            │                                               │             │
+│                            │ (user interrupts agent)                       │             │
+│                            ▼                                               │             │
+│   ┌─────────────────────────────────────────────────────┐                  │             │
+│   │ Audio Playback System                               │                  │             │
+│   │ - AudioContext queue with scheduled playback        │                  │             │
+│   │ - Gain node for instant muting on barge-in          │                  │             │
+│   │ - Real-time buffer management                       │◀─────────────────┼─────────┐   │
+│   └─────────────────────────────────────────────────────┘                  │         │   │
+│                                                                            │         │   │
+└────────────────────────────────────────────────────────────────────────────┼─────────┼───┘
+                                                                             │         │
+                                         WebSocket Connection (ws:// or wss://)        │
+                                                                             │         │
+                                                                             ▼         │
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                        SERVER                                           │
+│                                     (aiohttp + session.py)                              │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                         │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ 1. SPEECH-TO-TEXT                                                                 │  │
+│  │    (services/speech_to_text.py)                                                   │  │
+│  │    ┌────────────────────┐         ┌─────────────────────────────────────────────┐ │  │
+│  │    │ Browser Audio      │────────▶│ ElevenLabs Scribe Realtime API             │ │  │
+│  │    │ (PCM Base64)       │         │ - WebSocket streaming                       │ │  │
+│  │    └────────────────────┘         │ - Manual commit strategy (browser-controlled)│ │  │
+│  │                                   │ - German language (de)                      │ │  │
+│  │                                   └──────────────────────┬──────────────────────┘ │  │
+│  │                                                          │                        │  │
+│  │                                                          ▼                        │  │
+│  │                                            ┌─────────────────────────┐            │  │
+│  │                                            │ Partial + Final         │            │  │
+│  │                                            │ Transcripts             │────────────┼──┼───▶ UI
+│  └────────────────────────────────────────────┴─────────────┬───────────┴────────────┘  │
+│                                                             │                           │
+│                                                             ▼                           │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ 2. RAG RETRIEVAL                                                                  │  │
+│  │    (services/product_rag.py)                                                      │  │
+│  │    ┌────────────────────┐         ┌─────────────────────────────────────────────┐ │  │
+│  │    │ User Query         │────────▶│ TF-IDF Vectorizer                           │ │  │
+│  │    │                    │         │ - 1-2 word n-grams                          │ │  │
+│  │    └────────────────────┘         │ - Cosine similarity search                  │ │  │
+│  │                                   │ - Top-K results (default: 5)                │ │  │
+│  │                                   └──────────────────────┬──────────────────────┘ │  │
+│  │                                                          │                        │  │
+│  │    ┌─────────────────────────────────────────────────────▼──────────────────────┐ │  │
+│  │    │ Product Chunks (from data/products.md)                                     │ │  │
+│  │    │ - Parsed by section headers                                                │ │  │
+│  │    │ - Swiss Life product info: Investment, Retirement, Protection             │ │  │
+│  │    └────────────────────────────────────────────────────────────────────────────┘ │  │
+│  └──────────────────────────────────────────────────────────┬───────────────────────┘  │
+│                                                             │                           │
+│                                                             ▼                           │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ 3. LLM GENERATION                                                                 │  │
+│  │    (services/llm.py)                                                              │  │
+│  │    ┌────────────────────┐         ┌─────────────────────────────────────────────┐ │  │
+│  │    │ System Prompt      │         │ Anthropic Claude API (claude-haiku-4-5)     │ │  │
+│  │    │ + RAG Context      │────────▶│ - Streaming SSE response                    │ │  │
+│  │    │ + Conversation     │         │ - Prompt caching for efficiency             │ │  │
+│  │    │   History          │         │ - Task completion markers [TASK_X_DONE]     │ │  │
+│  │    └────────────────────┘         └──────────────────────┬──────────────────────┘ │  │
+│  │                                                          │                        │  │
+│  │                                                          ▼                        │  │
+│  │                                            ┌─────────────────────────┐            │  │
+│  │                                            │ Streaming Tokens        │────────────┼──┼───▶ UI
+│  │                                            │ (partial response)      │            │  │
+│  └────────────────────────────────────────────┴─────────────┬───────────┴────────────┘  │
+│                                                             │                           │
+│                                                             ▼                           │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ 4. SENTENCE PROCESSING                                                            │  │
+│  │    (core/processors.py)                                                           │  │
+│  │    ┌────────────────────┐         ┌─────────────────────────────────────────────┐ │  │
+│  │    │ Token Stream       │────────▶│ Sentence Splitter                           │ │  │
+│  │    │                    │         │ - Buffers until . ! ? detected              │ │  │
+│  │    └────────────────────┘         │ - Strips [TASK_X_DONE] markers              │ │  │
+│  │                                   │ - Enables incremental TTS                   │ │  │
+│  │                                   └──────────────────────┬──────────────────────┘ │  │
+│  └──────────────────────────────────────────────────────────┼───────────────────────┘  │
+│                                                             │                           │
+│                                                             ▼                           │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ 5. TEXT-TO-SPEECH                                                                 │  │
+│  │    (services/text_to_speech.py)                                                   │  │
+│  │    ┌────────────────────┐         ┌─────────────────────────────────────────────┐ │  │
+│  │    │ Complete Sentence  │────────▶│ ElevenLabs TTS REST API                     │ │  │
+│  │    │                    │         │ - Model: eleven_flash_v2_5                  │ │  │
+│  │    └────────────────────┘         │ - Output: PCM 16kHz signed 16-bit           │ │  │
+│  │                                   │ - Streaming chunks (1600-3200 bytes)        │ │  │
+│  │                                   └──────────────────────┬──────────────────────┘ │  │
+│  │                                                          │                        │  │
+│  │                                                          ▼                        │  │
+│  │                                            ┌─────────────────────────┐            │  │
+│  │                                            │ PCM Audio Chunks        │────────────┼──┼───▶ Browser
+│  │                                            │ (Base64 via WebSocket)  │            │  │
+│  └──────────────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                         │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ BARGE-IN HANDLING (core/session.py)                                               │  │
+│  │ ═══════════════════════════════════════════════════════════════════════════════  │  │
+│  │ • Browser detects user speech during playback → sends "user_speaking" event      │  │
+│  │ • Server cancels ongoing LLM generation (asyncio.Task.cancel())                  │  │
+│  │ • Server sends "clear_audio" → Browser mutes gain node + stops all sources       │  │
+│  │ • Echo detection prevents agent's own speech from triggering barge-in            │  │
+│  │ • Conversation context preserved for seamless continuation                       │  │
+│  └──────────────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Message Flow (WebSocket JSON Protocol)
+
+| Direction | Message Type | Payload | Purpose |
+|-----------|-------------|---------|---------|
+| Browser → Server | `audio` | `{audio: base64}` | Microphone PCM chunks |
+| Browser → Server | `commit` | `{}` | VAD silence detected, commit transcript |
+| Browser → Server | `user_speaking` | `{interrupted: true}` | User interrupted agent |
+| Browser → Server | `audio_status` | `{playing: bool}` | Playback state update |
+| Browser → Server | `config` | `{tasks: [...]}` | Session configuration |
+| Server → Browser | `status` | `"listening"/"thinking"/"speaking"` | State changes |
+| Server → Browser | `partial_transcript` | `"text..."` | Real-time STT |
+| Server → Browser | `user_transcript` | `"text..."` | Final user speech |
+| Server → Browser | `partial_response` | `"text..."` | Streaming LLM output |
+| Server → Browser | `agent_response` | `"text..."` | Complete agent response |
+| Server → Browser | `audio` | `{audio: base64}` | TTS PCM chunks |
+| Server → Browser | `clear_audio` | `true` | Stop playback (barge-in) |
+| Server → Browser | `task_update` | `{id, completed}` | Task completion |
 
 ### Key Features
 
