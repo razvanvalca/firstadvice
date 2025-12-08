@@ -152,13 +152,6 @@ The `config/settings.py` module provides typed configuration via Python dataclas
    ```bash
    # Option 1: Direct Python
    python main.py
-
-   # Option 2: Startup script (Windows)
-   start.bat
-
-   # Option 3: Startup script (Unix/Linux/macOS)
-   chmod +x start.sh
-   ./start.sh
    ```
 
 6. **Open in browser:**
